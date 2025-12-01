@@ -14,6 +14,7 @@ typedef struct {
 } program_input;
 
 void part1(program_state, program_input *, int);
+void part2(program_state, program_input *, int);
 
 int main(int argc, char **argv)
 {
@@ -32,6 +33,7 @@ int main(int argc, char **argv)
     }
 
     part1(initial_state, input, input_length);
+    part2(initial_state, input, input_length);
 
     return EXIT_SUCCESS;
 }
@@ -45,4 +47,23 @@ void part1(program_state state, program_input *input, int input_length) {
     }
 
     printf("The answer to part 1 is: %d\n", password);
+}
+
+void part2(program_state state, program_input *input, int input_length) {
+    int password = 0;
+
+    for (int i = 0; i < input_length; i++) {
+        int desired = state.current_rotation + input[i].change;
+        int sign = state.current_rotation < desired ? 1 : -1;
+        while (state.current_rotation != desired) {
+
+            if (state.current_rotation % FULL_ROTATION == 0) {
+                password++;
+            }
+
+            state.current_rotation = state.current_rotation + sign;
+        }
+    }
+
+    printf("The answer to part 2 is: %d\n", password);
 }
