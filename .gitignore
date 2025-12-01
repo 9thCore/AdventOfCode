@@ -1,0 +1,6 @@
+2021
+*.tlog
+*.vcxproj*
+*.exe*
+*.pdb*
+*/*/x64
