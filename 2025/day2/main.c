@@ -31,12 +31,16 @@ int main(int argc, char **argv)
 void find_properties(num_t number, num_t *digit_count, num_t *next_power) {
     *digit_count = 0;
     *next_power = 1;
-    
+
     while (number) {
         (*digit_count)++;
         (*next_power) *= 10;
         number /= 10;
     }
+}
+
+void iterate_trivial_case(num_t *trivial_case) {
+    *trivial_case = *trivial_case * 10 + 1;
 }
 
 void part1(program_input *input, size_t input_length) {
@@ -65,9 +69,57 @@ void part1(program_input *input, size_t input_length) {
         }
     }
 
-    printf("The answer for part 1 is: %llu", sum);
+    printf("The answer for part 1 is: %llu\n", sum);
 }
 
 void part2(program_input *input, size_t input_length) {
-    
+    num_t sum = 0;
+    num_t digit_count, next_power;
+    num_t trivial_case;
+
+    for (size_t i = 0; i < input_length; i++) {
+        find_properties(input[i].left, &digit_count, &next_power);
+
+        trivial_case = 0;
+        for (num_t j = 0; j < digit_count; j++) {
+            iterate_trivial_case(&trivial_case);
+        }
+
+        for (num_t j = input[i].left; j <= input[i].right; j++) {
+            if (j < 10) {
+                continue;
+            }
+
+            if (j == next_power) {
+                next_power *= 10;
+                iterate_trivial_case(&trivial_case);
+                digit_count++;
+            }
+            
+            if (j % trivial_case == 0) {
+                sum += j;
+                continue;
+            }
+
+            for (num_t k = 2; k <= digit_count / 2; k++) {
+                if (digit_count % k != 0) {
+                    continue;
+                }
+
+                num_t pattern = 1;
+                num_t raise = pow(10, k);
+
+                for (num_t step = 1; step < digit_count / k; step++) {
+                    pattern = pattern * raise + 1;
+                }
+
+                if (j % pattern == 0) {
+                    sum += j;
+                    break;
+                }
+            }
+        }
+    }
+
+    printf("The answer for part 2 is: %llu", sum);
 }
