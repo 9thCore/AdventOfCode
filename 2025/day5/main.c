@@ -7,12 +7,14 @@
 typedef unsigned long long ingredient_t;
 #define INGREDIENT_FORMAT "%llu"
 
+typedef struct {
+    ingredient_t left, right;
+} range_t;
+
 // changed to one input with everything, from array of inputs
 typedef struct {
     int range_count;
-    struct {
-        ingredient_t left, right;
-    } ranges[ARBITRARY_INPUT_MAX_RANGES];
+    range_t ranges[ARBITRARY_INPUT_MAX_RANGES];
 
     int ingredient_count;
     ingredient_t ingredients[ARBITRARY_INPUT_MAX_INGREDIENTS];
@@ -44,14 +46,17 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 
+int inside_range(ingredient_t ingredient, range_t *range) {
+    return range->left <= ingredient && ingredient <= range->right;
+}
+
 void part1(program_input input) {
     int answer = 0;
 
     for (int i = 0; i < input.ingredient_count; i++) {
         ingredient_t ingredient = input.ingredients[i];
         for (int j = 0; j < input.range_count; j++) {
-            if (input.ranges[j].left <= ingredient
-                && ingredient <= input.ranges[j].right) {
+            if (inside_range(ingredient, input.ranges + j)) {
                 answer++;
                 break;
             }
@@ -61,8 +66,72 @@ void part1(program_input input) {
     printf("The answer to part 1 is: %d\n", answer);
 }
 
-void part2(program_input input) {
-    int answer = 0;
+int invalid_range(range_t *range) {
+    return range->left == 0 && range->right == 0;
+}
 
-    printf("The answer to part 2 is: %d\n", answer);
+void invalidate_range(range_t *range) {
+    range->left = 0;
+    range->right = 0;
+}
+
+void part2(program_input input) {
+    ingredient_t answer = 0;
+
+    range_t *joined_ranges = malloc(sizeof(range_t) * input.range_count);
+    int joined_range_count = 0;
+
+    for (int i = 0; i < input.range_count; i++) {
+        range_t *origin = input.ranges + i;
+
+        if (invalid_range(origin)) {
+            continue;
+        }
+
+        int changed;
+
+        do {
+            changed = 0;
+
+            for (int j = i + 1; j < input.range_count; j++) {
+                range_t *additive = input.ranges + j;
+                if (invalid_range(additive)) {
+                    continue;
+                }
+
+                int left_inside = inside_range(additive->left, origin);
+                int right_inside = inside_range(additive->right, origin);
+
+                if (left_inside && right_inside) {
+                    invalidate_range(additive);
+                } else if (left_inside) { // Implicintly, it can't have the right side inside of the origin range
+                    origin->right = additive->right;
+                    invalidate_range(additive);
+                    changed = 1;
+                } else if (right_inside) { // Implicintly, it can't have the left side inside of the origin range
+                    origin->left = additive->left;
+                    invalidate_range(additive);
+                    changed = 1;
+                } else {
+                    if (inside_range(origin->left, additive)
+                    && inside_range(origin->right, additive)) {
+                        *origin = *additive;
+                        invalidate_range(additive);
+                        changed = 1;
+                    }
+                }
+            }
+        } while (changed);
+
+        joined_ranges[joined_range_count++] = *origin;
+        invalidate_range(origin);
+    }
+
+    for (int i = 0; i < joined_range_count; i++) {
+        answer += joined_ranges[i].right - joined_ranges[i].left + 1;
+    }
+
+    free(joined_ranges);
+
+    printf("The answer to part 2 is: " INGREDIENT_FORMAT "\n", answer);
 }
