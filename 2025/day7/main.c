@@ -45,7 +45,7 @@ void part1(program_input input) {
     int *tachyons = calloc(input.width, sizeof(int));
 
     tachyons[input.startx] = 1;
-    for (int i = input.starty; i < input.height; i++) {
+    for (int i = input.starty; i < input.height; i ++) {
         for (int j = 1; j < input.width - 1; j++) {
             if (tachyons[j] && input.manifold[i][j] == '^') {
                 answer++;
@@ -63,6 +63,36 @@ void part1(program_input input) {
 
 void part2(program_input input) {
     number_t answer = 0;
+
+    number_t timeline_count[ARBITRARY_LINE_COUNT][ARBITRARY_LINE_LENGTH] = {0};
+
+    int last_line_index = input.height - 2;
+    char *last_line = input.manifold[last_line_index];
+    number_t *last_timeline_line = timeline_count[last_line_index];
+    for (int j = 0; j < input.width; j++) {
+        if (last_line[j] == '^') {
+            last_timeline_line[j] = 2;
+        }
+    }
+
+    for (int i = input.height - 4; i >= 2; i -= 2) {
+        for (int j = 1; j < input.width - 1; j++) {
+            if (input.manifold[i][j] == '^') {
+                number_t left = timeline_count[i + 2][j - 1];
+                number_t right = timeline_count[i + 2][j + 1];
+                timeline_count[i][j] = (left ? left : 1) + (right ? right : 1);
+            } else {
+                timeline_count[i][j] = timeline_count[i + 2][j];
+            }
+        }
+    }
+
+    for (int i = input.starty; i < input.height; i++) {
+        if (timeline_count[i][input.startx] != 0) {
+            answer = timeline_count[i][input.startx];
+            break;
+        }
+    }
 
     printf("The answer to part 2 is: " NUMBER_FORMAT "\n", answer);
 }
